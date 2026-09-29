@@ -69,11 +69,16 @@
             </ol>
         <section id="subscribe" class="subscribe-card">
             <h2> 디자인 뉴스레터 받기</h2>
-            <form>
+            <form id="subscribe-form">
                 <label for="email">이메일 </label>
                 <input type="email" id="email" name="email" required>
-                <button type="submit">구독하기</button>
+                <button id="subscribeButton" type="submit">구독하기</button>
+                
             </form>
+            <p id="subscribeMessage" aria-live="polite">
+                이메일을 입력한 뒤 버튼을 눌러 주세요.
+            </p>
+
         </section>
     </main>
 
@@ -81,9 +86,7 @@
         <small>2026 sara jeong portfolio. All rights reserved.</small>
     </footer>
 
-
-
-
+    <script src="script.js"></script>
 
 </body>
 </html>
