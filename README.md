@@ -31,3 +31,17 @@ textContent로 안내 문구와 버튼의 글자를 변경
 classList.add("is-success")로 구독 완료 메시지의 CSS 스타일을 적용
 disabled = true로 구독 완료 후 버튼을 비활성화
 이메일이 비어 있는 경우, 함수를 완료하지 않고 멈춘다.
+
+## 6주차 JavaScript 이벤트와 동적 UI를 추가하기
+### HTML
+id, class, data-target, hidden: 요소 식별 및 콘텐츠 연결·표시 제어
+### CSS
+선택자(., #), :hover, display: flex, gap: 스타일 및 배치
+### JavaScript
+querySelector(), querySelectorAll(): 요소 선택
+addEventListener(): 이벤트 등록
+forEach(): 반복 처리
+function: 함수 정의
+classList, setAttribute(), hidden: 요소 상태 변경
+탭 기능
+버튼 클릭 → 탭 초기화 → 선택한 패널 표시
