@@ -32,7 +32,7 @@
     </header>
 
     <main>
-        <section id="about"></section>
+        <section id="about">
             <h2>포트폴리오 소개</h2>
             <h3>실내 디자인 프로젝트와 관련된 다양한 작업물을 소개합니다.</h3>
 
@@ -40,25 +40,77 @@
 
             <p>저희는 다양한 실내 디자인 프로젝트를 통해 고객님께 최고의 디자인 솔루션을 제공합니다.</p>
             <p>디자인 소식을 뉴스레터를 통해 받아보세요.</p>
+        </section>
+
         <section id="features">
             <h2> 포트폴리오 종류</h2>
-            <ul class="feature-list">
-                <li class="feature-card">
-                    <h3>실내 공간 디자인</h3>
-                    <p>주거와 상업 공간의 실내 디자인 프로젝트를 소개합니다.</p>
-                </li>
-                <li class="feature-card">
-                    <h3>공간 스타일링</h3>
-                    <p>실내 공간의 스타일링 프로젝트를 소개합니다.</p>
-                </li>
-                <li class="feature-card">
-                    <h3>리빙 제품 무드보드</h3>
-                    <p>리빙 제품 제안을 시각화한 무드보드를 소개합니다.</p>
-                </li>
-            </ul>
+         
+            <div class="tabs" role="tablist" aria-label="기능 선택">
+                <button
+                    id="tab-house"
+                    class="tab is-active"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="feature-house"
+                    data-target="#feature-house">
+                    주거공간 디자인
+                </button>
+
+                <button
+                    id="tab-office"
+                    class="tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="feature-office"
+                    data-target="#feature-office">
+                    상업공간 디자인
+                </button>
+
+                <button
+                    id="tab-decor"
+                    class="tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="feature-decor"
+                    data-target="#feature-decor">
+                    실내 데코 디자인
+                </button>
+            </div>
+
+            <div
+                id="feature-house"
+                class="panel is-active"
+                role="tabpanel"
+                aria-labelledby="tab-house">
+                <h3>주거공간 디자인</h3>
+                <p>여러분의 집을 더 아름답게 꾸며드릴 수 있습니다.</p>
+            </div>
+
+            <div
+                id="feature-office"
+                class="panel"
+                role="tabpanel"
+                aria-labelledby="tab-office"
+                hidden>
+                <h3>상업공간 디자인</h3>
+                <p>매력있는 상업공간을 디자인해드릴 수 있습니다.</p>
+            </div>
+
+            <div
+                id="feature-decor"
+                class="panel"
+                role="tabpanel"
+                aria-labelledby="tab-decor"
+                hidden>
+                <h3>실내 데코 디자인</h3>
+                <p>공사 없이 소품과 장식으로 분위기를 만들어 드릴 수 있습니다.</p>
+            </div>
        </section>
 
-        <section id="steps"></section>
+        <section id="steps">
             <h2> 이용 방법 </h2>
             <ol>
                 <li>포트폴리오 종류를 선택합니다.</li>
@@ -67,6 +119,40 @@
                 <li>마음에 드는 작업물을 선택합니다.</li>
                 <li>선택한 작업물에 대한 구매 정보를 확인합니다.</li>
             </ol>
+        </section>
+
+        <section id="event-practice">
+            <h2>구독자 무료 상담 이벤트</h2>
+
+            <div class="event-grid">
+                <article class="event-card">
+                    <h3>화면 테마</h3>
+                    <button id="themeButton" type="button">다크 테마로 바꾸기</button>
+                </article>
+
+                <article class="event-card">
+                    <h3>구독자 정보</h3>
+                    <label for="nickname">구독자 이름</label>
+                    <input type="text" id="nickname" maxLength="10">
+                    <p id="nicknameCount" aria-live="polite">0/10</p>
+                </article>
+
+                <article class="event-card">
+                    <h3>개인정보 수집 및 이용</h3>
+                    <label class="agree-row">
+                        <input type="checkbox" id="agreeCheck">
+                        개인정보 수집 및 이용에 동의합니다.
+                    </label>
+                    <p id="agreeMessage" aria-live="polite">
+                        동의 및 설문완료 후 상담 신청하실 수 있습니다.
+                    </p>
+                    <button id="startButton" type="button" disabled>
+                        상담 시작하기
+                    </button>
+                </article>
+            </div>
+        </section>    
+
         <section id="subscribe" class="subscribe-card">
             <h2> 디자인 뉴스레터 받기</h2>
             <form id="subscribe-form">
