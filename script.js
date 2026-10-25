@@ -361,3 +361,225 @@ if (trainingFlow) {
         });
     }
 }
+
+
+/* 포트폴리오 보관함 기능 */
+
+
+/* 포트폴리오 보관함 기능 */
+
+const saveButtons = document.querySelectorAll(".save-portfolio");
+const savedPortfolioList = document.querySelector("#saved-portfolio-list");
+const savedMessage = document.querySelector("#saved-message");
+
+const STORAGE_KEY = "sarajeong-saved-portfolios";
+
+const portfolioData = {
+    house: {
+        title: "주거공간 디자인",
+        description: "편안하고 따뜻한 분위기의 주거공간",
+        image: "assets/images/serviceimage.png",
+        tabId: "tab-house"
+    },
+    office: {
+        title: "상업공간 디자인",
+        description: "브랜드의 개성을 살린 상업공간",
+        image: "assets/images/serviceimage2.png",
+        tabId: "tab-office"
+    },
+    decor: {
+        title: "실내 데코 디자인",
+        description: "소품과 색상으로 완성하는 공간 스타일링",
+        image: "assets/images/serviceimage3.png",
+        tabId: "tab-decor"
+    }
+};
+
+/* 저장된 목록 불러오기 */
+function loadSavedPortfolios() {
+    try {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+
+        if (!savedData) return [];
+
+        const parsedData = JSON.parse(savedData);
+
+        if (!Array.isArray(parsedData)) return [];
+
+        return [...new Set(parsedData)].filter(function(id) {
+            return Object.prototype.hasOwnProperty.call(
+                portfolioData,
+                id
+            );
+        });
+    } catch (error) {
+        return [];
+    }
+}
+
+let savedPortfolios = loadSavedPortfolios();
+
+/* 저장 목록을 브라우저에 기록하기 */
+function persistSavedPortfolios() {
+    try {
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(savedPortfolios)
+        );
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+/* 저장 버튼 상태 업데이트 */
+function updateSaveButtons() {
+    saveButtons.forEach(function(button) {
+        const id = button.dataset.saveId;
+        const isSaved = savedPortfolios.includes(id);
+
+        button.textContent = isSaved
+            ? "보관함에서 삭제"
+            : "보관함에 저장";
+
+        button.setAttribute(
+            "aria-pressed",
+            String(isSaved)
+        );
+    });
+}
+
+/* 보관함 화면 표시 */
+function renderSavedPortfolios() {
+    if (!savedPortfolioList || !savedMessage) return;
+
+    savedPortfolioList.innerHTML = "";
+
+    if (savedPortfolios.length === 0) {
+        const emptyMessage = document.createElement("p");
+
+        emptyMessage.classList.add("empty-message");
+        emptyMessage.textContent =
+            "아직 저장한 포트폴리오가 없습니다.";
+
+        savedPortfolioList.appendChild(emptyMessage);
+        updateSaveButtons();
+        return;
+    }
+
+    savedPortfolios.forEach(function(id) {
+        const portfolio = portfolioData[id];
+
+        if (!portfolio) return;
+
+        const card = document.createElement("article");
+        card.classList.add("saved-portfolio-card");
+
+        const image = document.createElement("img");
+        image.src = portfolio.image;
+        image.alt = portfolio.title;
+
+        const title = document.createElement("h3");
+        title.textContent = portfolio.title;
+
+        const description = document.createElement("p");
+        description.textContent = portfolio.description;
+
+        const actions = document.createElement("div");
+        actions.classList.add("saved-actions");
+
+        /* 다시 보기 버튼 */
+        const openButton = document.createElement("button");
+        openButton.type = "button";
+        openButton.textContent = "다시 보기";
+
+        openButton.addEventListener("click", function() {
+            const targetTab = document.querySelector(
+                "#" + portfolio.tabId
+            );
+
+            if (targetTab) {
+                targetTab.click();
+
+                document.querySelector("#features").scrollIntoView({
+                    behavior: "smooth"
+                });
+
+                savedMessage.textContent =
+                    portfolio.title + " 포트폴리오를 열었습니다.";
+            }
+        });
+
+        /* 보관함에서 삭제 버튼 */
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.textContent = "보관함에서 삭제";
+
+        removeButton.addEventListener("click", function() {
+            savedPortfolios = savedPortfolios.filter(function(savedId) {
+                return savedId !== id;
+            });
+
+            const savedSuccessfully = persistSavedPortfolios();
+
+            renderSavedPortfolios();
+
+            savedMessage.textContent = savedSuccessfully
+                ? portfolio.title + " 포트폴리오를 삭제했습니다."
+                : "삭제했지만 브라우저에 변경 사항을 저장하지 못했습니다.";
+        });
+
+        actions.appendChild(openButton);
+        actions.appendChild(removeButton);
+
+        card.appendChild(image);
+        card.appendChild(title);
+        card.appendChild(description);
+        card.appendChild(actions);
+
+        savedPortfolioList.appendChild(card);
+    });
+
+    updateSaveButtons();
+}
+
+/* 사진 저장 버튼 */
+saveButtons.forEach(function(button) {
+    button.addEventListener("click", function() {
+        const id = button.dataset.saveId;
+        const portfolio = portfolioData[id];
+
+        if (!portfolio || !savedMessage) return;
+
+        /* 이미 저장된 사진이면 삭제 */
+        if (savedPortfolios.includes(id)) {
+            savedPortfolios = savedPortfolios.filter(function(savedId) {
+                return savedId !== id;
+            });
+
+            const savedSuccessfully = persistSavedPortfolios();
+
+            renderSavedPortfolios();
+
+            savedMessage.textContent = savedSuccessfully
+                ? portfolio.title + " 포트폴리오를 삭제했습니다."
+                : "삭제했지만 브라우저에 변경 사항을 저장하지 못했습니다.";
+
+            return;
+        }
+
+        /* 보관함에 사진 추가 */
+        savedPortfolios.push(id);
+
+        const savedSuccessfully = persistSavedPortfolios();
+
+        renderSavedPortfolios();
+
+        savedMessage.textContent = savedSuccessfully
+            ? portfolio.title + " 포트폴리오를 저장했습니다."
+            : "현재 화면에는 저장했지만 브라우저에 기록하지 못했습니다.";
+    });
+});
+
+/* 페이지를 열 때 저장 목록 표시 */
+renderSavedPortfolios();
