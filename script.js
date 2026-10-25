@@ -247,7 +247,7 @@ if (trainingFlow) {
         const value = titleInput.value.trim();
 
         if (!value) {
-            titleError.textContent = "발표 제목을 입력해 주세요.";
+            titleError.textContent = "상담 신청하실 내용을 입력해 주세요.";
             titleInput.classList.add("has-error");
             titleInput.focus();
             return false;
