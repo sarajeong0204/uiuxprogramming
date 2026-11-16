@@ -1,585 +1,363 @@
-
-const serviceName = "Sarajeong Interior Decor";
-let isSubscribed = false;
-let submitCount = 0;
-
-// 요소 선택
-const subscribeForm = document.querySelector("#subscribe-form");
-const emailInput = document.querySelector("#email");
-const subscribeButton = document.querySelector("#subscribeButton");
-const subscribeMessage = document.querySelector("#subscribeMessage");
-
-function makeSubscribeMessage(email, subscribed) {
-    if (subscribed) {
-        return email + "로 뉴스레터 구독이 완료되었습니다.";
-    }
-    return "이메일을 입력한 뒤 버튼을 눌러 주세요.";
-}
-
-// 1. 뉴스레터 구독
-if (subscribeForm && emailInput && subscribeButton && subscribeMessage) {
-    subscribeForm.addEventListener("submit", function(event) {
-        event.preventDefault();
-
-        if (isSubscribed) return;
-
-        const subscriberEmail = emailInput.value.trim();
-
-        if (!subscriberEmail) {
-            subscribeMessage.textContent =
-                "이메일을 입력한 뒤 버튼을 눌러 주세요.";
-            subscribeMessage.classList.remove("is-success");
-            emailInput.focus();
-            return;
-        }
-
-        if (!emailInput.validity.valid) {
-            subscribeMessage.textContent =
-                "올바른 이메일 주소를 입력해 주세요.";
-            subscribeMessage.classList.remove("is-success");
-            emailInput.focus();
-            return;
-        }
-
-        isSubscribed = true;
-        submitCount += 1;
-
-        subscribeMessage.textContent =
-            makeSubscribeMessage(subscriberEmail, isSubscribed);
-        subscribeMessage.classList.add("is-success");
-
-        subscribeButton.textContent = "구독 완료";
-        subscribeButton.disabled = true;
-    });
-}
-
-// 2. 다크 모드
-const themeButton = document.querySelector("#themeButton");
-
-if (themeButton) {
-    themeButton.addEventListener("click", function() {
-        const isDark = document.body.classList.toggle("dark");
-
-        themeButton.textContent = isDark
-            ? "라이트 테마로 바꾸기"
-            : "다크 테마로 바꾸기";
-    });
-}
-
-// 3. 닉네임 글자 수 표시
+const storageKey = "rehear-training-plans-v1";
+const form = document.querySelector("#plan-form");
+const steps = [...document.querySelectorAll(".flow-step")];
+const progressItems = [...document.querySelectorAll(".progress-item")];
+const titleInput = document.querySelector("#presentation-title");
+const titleField = document.querySelector("#title-field");
+const titleHelp = document.querySelector("#title-help");
+const titleCount = document.querySelector("#title-count");
+const titleError = document.querySelector("#title-error");
 const nicknameInput = document.querySelector("#nickname");
-const nicknameCount = document.querySelector("#nicknameCount");
+const nicknameCount = document.querySelector("#nickname-count");
+const qnaOption = document.querySelector("#qna-option");
+const qnaOptions = document.querySelector("#qna-options");
+const qnaCountInputs = [...document.querySelectorAll('input[name="qna-count"]')];
+const planList = document.querySelector("#plan-list");
+const emptyState = document.querySelector("#empty-state");
+const planCount = document.querySelector("#plan-count");
+const archiveStatus = document.querySelector("#archive-status");
+const planDialog = document.querySelector("#plan-dialog");
+const saveButton = document.querySelector("#save-plan");
+const submitStatus = document.querySelector("#submit-status");
+const forceSaveFailure = new URLSearchParams(location.search).has("save-error");
 
-function handleNicknameInput() {
-    if (!nicknameInput || !nicknameCount) return;
-
-    const maxLength = nicknameInput.maxLength;
-    const currentLength = nicknameInput.value.length;
-
-    nicknameCount.textContent =
-        currentLength + "/" + (maxLength > 0 ? maxLength : "제한 없음");
+function readPlans() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    if (!Array.isArray(stored)) return [];
+    return stored.filter((plan) => plan && typeof plan.id === "string" && typeof plan.title === "string")
+      .map((plan) => ({
+        id: plan.id,
+        title: plan.title.slice(0, 60),
+        nickname: typeof plan.nickname === "string" ? plan.nickname.slice(0, 10) : "",
+        duration: ["3", "5", "10"].includes(plan.duration) ? plan.duration : "5",
+        qna: plan.qna === true,
+        qnaCount: ["1", "2", "3"].includes(plan.qnaCount) ? plan.qnaCount : "2",
+        cancelled: plan.cancelled === true,
+        createdAt: typeof plan.createdAt === "string" ? plan.createdAt : ""
+      }));
+  } catch {
+    return [];
+  }
 }
 
-if (nicknameInput && nicknameCount) {
-    nicknameInput.addEventListener("input", handleNicknameInput);
-    handleNicknameInput();
+let plans = readPlans();
+let currentStep = 1;
+
+function savePlans() {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(plans));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-// 4. 약관 동의 및 상담 시작
-const agreeCheck = document.querySelector("#agreeCheck");
-const agreeMessage = document.querySelector("#agreeMessage");
-const startButton = document.querySelector("#startButton");
-
-function handleAgreeChange() {
-    if (!agreeCheck || !startButton || !agreeMessage) return;
-
-    const agreed = agreeCheck.checked;
-
-    startButton.disabled = !agreed;
-    agreeMessage.textContent = agreed
-        ? "약관에 동의하셨습니다."
-        : "약관에 동의하셔야 시작할 수 있습니다.";
-
-    agreeMessage.classList.toggle("is-ready", agreed);
+function showStep(number) {
+  currentStep = number;
+  steps.forEach((step) => { step.hidden = Number(step.dataset.step) !== number; });
+  progressItems.forEach((item, index) => {
+    const isCurrent = index === number - 1;
+    item.classList.toggle("is-current", isCurrent);
+    item.classList.toggle("is-done", index < number - 1);
+    if (isCurrent && number <= 3) item.setAttribute("aria-current", "step");
+    else item.removeAttribute("aria-current");
+  });
+  const heading = steps[number - 1].querySelector("h3");
+  heading.tabIndex = -1;
+  heading.focus({ preventScroll: true });
+  document.querySelector("#planner").scrollIntoView({ block: "start", behavior: "smooth" });
 }
 
-if (agreeCheck && startButton && agreeMessage) {
-    agreeCheck.addEventListener("change", handleAgreeChange);
-    handleAgreeChange();
+function showTitleError(message) {
+  titleInput.setAttribute("aria-invalid", "true");
+  titleError.textContent = message;
+  titleField.classList.remove("is-valid");
+  titleField.classList.add("has-error");
+  return false;
 }
 
-// 5. 탭 전환
-const tabs = document.querySelectorAll(".tab");
-const panels = document.querySelectorAll(".panel");
-
-function resetTabsAndPanels() {
-    tabs.forEach(function(tab) {
-        tab.classList.remove("is-active");
-        tab.setAttribute("aria-selected", "false");
-    });
-
-    panels.forEach(function(panel) {
-        panel.classList.remove("is-active");
-        panel.hidden = true;
-    });
+function clearTitleError() {
+  titleInput.removeAttribute("aria-invalid");
+  titleError.textContent = "";
+  titleField.classList.remove("has-error");
+  updateTitleExperience();
 }
 
-function activateTab(clickedTab) {
-    const targetSelector = clickedTab.dataset.target;
+function validateTitle() {
+  const title = titleInput.value.trim();
 
-    if (!targetSelector) return;
+  if (!title) {
+    return showTitleError("발표 제목을 입력해 주세요.");
+  }
 
-    const targetPanel = document.querySelector(targetSelector);
+  if (title.length < 2) {
+    return showTitleError("발표 제목을 2자 이상 입력해 주세요.");
+  }
 
-    if (!targetPanel || !document.querySelector(".panel" + targetSelector)) {
-        // 아래의 ID 기반 탐색을 사용해 실제 패널을 확인합니다.
-        if (!targetPanel || !targetPanel.classList.contains("panel")) return;
-    }
-
-    clickedTab.classList.add("is-active");
-    clickedTab.setAttribute("aria-selected", "true");
-
-    targetPanel.classList.add("is-active");
-    targetPanel.hidden = false;
+  clearTitleError();
+  return true;
 }
 
-tabs.forEach(function(tab) {
-    tab.addEventListener("click", function(event) {
-        resetTabsAndPanels();
-        activateTab(event.currentTarget);
-    });
+function updateTitleExperience() {
+  const length = titleInput.value.length;
+  const enough = titleInput.value.trim().length >= 2;
+  const invalid = titleInput.getAttribute("aria-invalid") === "true";
+
+  titleCount.textContent = `${length} / 60자`;
+  titleField.classList.toggle("is-valid", enough && !invalid);
+
+  if (!invalid) {
+    titleHelp.textContent = enough
+      ? "입력 조건을 충족했습니다."
+      : "발표를 구분할 수 있도록 2자 이상 입력해 주세요.";
+  }
+}
+
+function getFormValues() {
+  return {
+    title: titleInput.value.trim(),
+    nickname: nicknameInput.value.trim(),
+    duration: form.querySelector('input[name="duration"]:checked').value,
+    qna: qnaOption.checked,
+    qnaCount: form.querySelector('input[name="qna-count"]:checked').value
+  };
+}
+
+function qnaText(plan) {
+  return plan.qna ? `질문 ${plan.qnaCount}개 포함` : "포함 안 함";
+}
+
+function updateSummary() {
+  const values = getFormValues();
+  document.querySelector("#summary-title").textContent = values.title;
+  document.querySelector("#summary-nickname").textContent = values.nickname || "입력 안 함";
+  document.querySelector("#summary-duration").textContent = `${values.duration}분`;
+  document.querySelector("#summary-qna").textContent = qnaText(values);
+}
+
+titleInput.addEventListener("input", () => {
+  updateTitleExperience();
+
+  if (titleInput.getAttribute("aria-invalid") === "true") {
+    validateTitle();
+  }
 });
 
-// 6. 상담 신청 단계
-const trainingFlow = document.querySelector("#training-flow");
-
-if (trainingFlow) {
-    const flowSteps = trainingFlow.querySelectorAll(".step");
-    const progressItems = trainingFlow.querySelectorAll(".progress_item");
-
-    const titleInput = document.querySelector("#presentation-title");
-    const titleError = document.querySelector("#title-error");
-    const titleNext = document.querySelector("#title-next");
-
-    const durationRange = document.querySelector("#duration-range");
-    const durationValue = document.querySelector("#duration-value");
-    const qnaOption = document.querySelector("#qna-option");
-    const qnaOptions = document.querySelector("#qna-options");
-
-    const optionPrev = document.querySelector("#survey-prev");
-    const optionNext = document.querySelector("#survey-next");
-    const summaryPrev = document.querySelector("#summary-prev");
-    const finishButton = document.querySelector("#finish-button");
-    const restartButton = document.querySelector("#restart-button");
-
-    const summaryTitle = document.querySelector("#summary-title");
-    const summaryDuration = document.querySelector("#summary-duration");
-    const summaryQna = document.querySelector("#summary-qna");
-
-    const recordingDialog = document.querySelector("#recording-dialog");
-    const recordingCancel = document.querySelector("#recording-cancel");
-    const recordingConfirm = document.querySelector("#recording-confirm");
-
-    const durationValues = ["3", "5", "10"];
-
-    const formData = {
-        title: "",
-        duration: "5",
-        qna: false,
-        qnaCount: "2"
-    };
-
-    function showStep(index) {
-        flowSteps.forEach(function(step, i) {
-            step.hidden = i !== index;
-        });
-
-        progressItems.forEach(function(item, i) {
-            item.classList.toggle("is-active", i === index);
-        });
-    }
-
-    function revokeRecordingAgreement() {
-        if (agreeCheck) {
-            agreeCheck.checked = false;
-            handleAgreeChange();
-            agreeCheck.focus();
-        }
-
-        trainingFlow.hidden = true;
-    }
-
-    if (startButton && agreeCheck && recordingDialog) {
-        startButton.addEventListener("click", function() {
-            if (!agreeCheck.checked) return;
-            recordingDialog.showModal();
-        });
-    }
-
-    if (recordingCancel && recordingDialog) {
-        recordingCancel.addEventListener("click", function() {
-            recordingDialog.close();
-            revokeRecordingAgreement();
-        });
-    }
-
-    if (recordingDialog) {
-        recordingDialog.addEventListener("cancel", function() {
-            revokeRecordingAgreement();
-        });
-    }
-
-    if (recordingConfirm && recordingDialog && titleInput) {
-        recordingConfirm.addEventListener("click", function() {
-            if (!agreeCheck || !agreeCheck.checked) return;
-
-            recordingDialog.close();
-            showStep(0);
-            trainingFlow.hidden = false;
-            trainingFlow.scrollIntoView({ behavior: "smooth" });
-            titleInput.focus();
-        });
-    }
-
-    function validateTitle() {
-        if (!titleInput || !titleError) return false;
-
-        const value = titleInput.value.trim();
-
-        if (!value) {
-            titleError.textContent = "상담 신청하실 내용을 입력해 주세요.";
-            titleInput.classList.add("has-error");
-            titleInput.focus();
-            return false;
-        }
-
-        titleError.textContent = "";
-        titleInput.classList.remove("has-error");
-        formData.title = value;
-        return true;
-    }
-
-    if (titleNext) {
-        titleNext.addEventListener("click", function() {
-            if (validateTitle()) showStep(1);
-        });
-    }
-
-    function updateDuration() {
-        if (!durationRange || !durationValue) return;
-
-        const index = Number(durationRange.value);
-        durationValue.value = durationValues[index] + "분";
-    }
-
-    if (durationRange) {
-        durationRange.addEventListener("input", updateDuration);
-        updateDuration();
-    }
-
-    if (qnaOption && qnaOptions) {
-        qnaOption.addEventListener("change", function() {
-            qnaOptions.hidden = !qnaOption.checked;
-        });
-    }
-
-    if (optionPrev) {
-        optionPrev.addEventListener("click", function() {
-            showStep(0);
-        });
-    }
-
-    if (optionNext) {
-        optionNext.addEventListener("click", function() {
-            if (!durationRange || !qnaOption ||
-                !summaryTitle || !summaryDuration || !summaryQna) return;
-
-            formData.duration = durationValues[Number(durationRange.value)];
-            formData.qna = qnaOption.checked;
-
-            const count = document.querySelector(
-                'input[name="qna-count"]:checked'
-            );
-
-            formData.qnaCount = count ? count.value : "2";
-
-            summaryTitle.textContent = formData.title;
-            summaryDuration.textContent = formData.duration + "분";
-            summaryQna.textContent = formData.qna
-                ? formData.qnaCount + "개 포함"
-                : "미포함";
-
-            showStep(2);
-        });
-    }
-
-    if (summaryPrev) {
-        summaryPrev.addEventListener("click", function() {
-            showStep(1);
-        });
-    }
-
-    if (finishButton) {
-        finishButton.addEventListener("click", function() {
-            showStep(3);
-        });
-    }
-
-    if (restartButton) {
-        restartButton.addEventListener("click", function() {
-            formData.title = "";
-            formData.duration = "5";
-            formData.qna = false;
-            formData.qnaCount = "2";
-
-            if (titleInput) titleInput.value = "";
-
-            if (titleError) titleError.textContent = "";
-
-            if (titleInput) {
-                titleInput.classList.remove("has-error");
-            }
-
-            if (durationRange) durationRange.value = "1";
-            updateDuration();
-
-            if (qnaOption) qnaOption.checked = false;
-            if (qnaOptions) qnaOptions.hidden = true;
-
-            const defaultCount = document.querySelector(
-                'input[name="qna-count"][value="2"]'
-            );
-
-            if (defaultCount) defaultCount.checked = true;
-
-            if (summaryTitle) summaryTitle.textContent = "";
-            if (summaryDuration) summaryDuration.textContent = "";
-            if (summaryQna) summaryQna.textContent = "";
-
-            showStep(0);
-            trainingFlow.hidden = true;
-        });
-    }
-}
-
-
-/* 포트폴리오 보관함 기능 */
-
-
-/* 포트폴리오 보관함 기능 */
-
-const saveButtons = document.querySelectorAll(".save-portfolio");
-const savedPortfolioList = document.querySelector("#saved-portfolio-list");
-const savedMessage = document.querySelector("#saved-message");
-
-const STORAGE_KEY = "sarajeong-saved-portfolios";
-
-const portfolioData = {
-    house: {
-        title: "주거공간 디자인",
-        description: "편안하고 따뜻한 분위기의 주거공간",
-        image: "assets/images/serviceimage.png",
-        tabId: "tab-house"
-    },
-    office: {
-        title: "상업공간 디자인",
-        description: "브랜드의 개성을 살린 상업공간",
-        image: "assets/images/serviceimage2.png",
-        tabId: "tab-office"
-    },
-    decor: {
-        title: "실내 데코 디자인",
-        description: "소품과 색상으로 완성하는 공간 스타일링",
-        image: "assets/images/serviceimage3.png",
-        tabId: "tab-decor"
-    }
-};
-
-/* 저장된 목록 불러오기 */
-function loadSavedPortfolios() {
-    try {
-        const savedData = localStorage.getItem(STORAGE_KEY);
-
-        if (!savedData) return [];
-
-        const parsedData = JSON.parse(savedData);
-
-        if (!Array.isArray(parsedData)) return [];
-
-        return [...new Set(parsedData)].filter(function(id) {
-            return Object.prototype.hasOwnProperty.call(
-                portfolioData,
-                id
-            );
-        });
-    } catch (error) {
-        return [];
-    }
-}
-
-let savedPortfolios = loadSavedPortfolios();
-
-/* 저장 목록을 브라우저에 기록하기 */
-function persistSavedPortfolios() {
-    try {
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(savedPortfolios)
-        );
-        return true;
-    } catch (error) {
-        return false;
-    }
-}
-
-/* 저장 버튼 상태 업데이트 */
-function updateSaveButtons() {
-    saveButtons.forEach(function(button) {
-        const id = button.dataset.saveId;
-        const isSaved = savedPortfolios.includes(id);
-
-        button.textContent = isSaved
-            ? "보관함에서 삭제"
-            : "보관함에 저장";
-
-        button.setAttribute(
-            "aria-pressed",
-            String(isSaved)
-        );
-    });
-}
-
-/* 보관함 화면 표시 */
-function renderSavedPortfolios() {
-    if (!savedPortfolioList || !savedMessage) return;
-
-    savedPortfolioList.innerHTML = "";
-
-    if (savedPortfolios.length === 0) {
-        const emptyMessage = document.createElement("p");
-
-        emptyMessage.classList.add("empty-message");
-        emptyMessage.textContent =
-            "아직 저장한 포트폴리오가 없습니다.";
-
-        savedPortfolioList.appendChild(emptyMessage);
-        updateSaveButtons();
-        return;
-    }
-
-    savedPortfolios.forEach(function(id) {
-        const portfolio = portfolioData[id];
-
-        if (!portfolio) return;
-
-        const card = document.createElement("article");
-        card.classList.add("saved-portfolio-card");
-
-        const image = document.createElement("img");
-        image.src = portfolio.image;
-        image.alt = portfolio.title;
-
-        const title = document.createElement("h3");
-        title.textContent = portfolio.title;
-
-        const description = document.createElement("p");
-        description.textContent = portfolio.description;
-
-        const actions = document.createElement("div");
-        actions.classList.add("saved-actions");
-
-        /* 다시 보기 버튼 */
-        const openButton = document.createElement("button");
-        openButton.type = "button";
-        openButton.textContent = "다시 보기";
-
-        openButton.addEventListener("click", function() {
-            const targetTab = document.querySelector(
-                "#" + portfolio.tabId
-            );
-
-            if (targetTab) {
-                targetTab.click();
-
-                document.querySelector("#features").scrollIntoView({
-                    behavior: "smooth"
-                });
-
-                savedMessage.textContent =
-                    portfolio.title + " 포트폴리오를 열었습니다.";
-            }
-        });
-
-        /* 보관함에서 삭제 버튼 */
-        const removeButton = document.createElement("button");
-        removeButton.type = "button";
-        removeButton.textContent = "보관함에서 삭제";
-
-        removeButton.addEventListener("click", function() {
-            savedPortfolios = savedPortfolios.filter(function(savedId) {
-                return savedId !== id;
-            });
-
-            const savedSuccessfully = persistSavedPortfolios();
-
-            renderSavedPortfolios();
-
-            savedMessage.textContent = savedSuccessfully
-                ? portfolio.title + " 포트폴리오를 삭제했습니다."
-                : "삭제했지만 브라우저에 변경 사항을 저장하지 못했습니다.";
-        });
-
-        actions.appendChild(openButton);
-        actions.appendChild(removeButton);
-
-        card.appendChild(image);
-        card.appendChild(title);
-        card.appendChild(description);
-        card.appendChild(actions);
-
-        savedPortfolioList.appendChild(card);
-    });
-
-    updateSaveButtons();
-}
-
-/* 사진 저장 버튼 */
-saveButtons.forEach(function(button) {
-    button.addEventListener("click", function() {
-        const id = button.dataset.saveId;
-        const portfolio = portfolioData[id];
-
-        if (!portfolio || !savedMessage) return;
-
-        /* 이미 저장된 사진이면 삭제 */
-        if (savedPortfolios.includes(id)) {
-            savedPortfolios = savedPortfolios.filter(function(savedId) {
-                return savedId !== id;
-            });
-
-            const savedSuccessfully = persistSavedPortfolios();
-
-            renderSavedPortfolios();
-
-            savedMessage.textContent = savedSuccessfully
-                ? portfolio.title + " 포트폴리오를 삭제했습니다."
-                : "삭제했지만 브라우저에 변경 사항을 저장하지 못했습니다.";
-
-            return;
-        }
-
-        /* 보관함에 사진 추가 */
-        savedPortfolios.push(id);
-
-        const savedSuccessfully = persistSavedPortfolios();
-
-        renderSavedPortfolios();
-
-        savedMessage.textContent = savedSuccessfully
-            ? portfolio.title + " 포트폴리오를 저장했습니다."
-            : "현재 화면에는 저장했지만 브라우저에 기록하지 못했습니다.";
-    });
+nicknameInput.addEventListener("input", () => {
+  nicknameCount.textContent = `${nicknameInput.value.length} / 10자`;
 });
 
-/* 페이지를 열 때 저장 목록 표시 */
-renderSavedPortfolios();
+function syncQnaFields() {
+  const open = qnaOption.checked;
+  qnaOption.setAttribute("aria-expanded", String(open));
+  qnaOptions.hidden = !open;
+  qnaCountInputs.forEach((input) => {
+    input.disabled = !open;
+  });
+}
+
+qnaOption.addEventListener("change", syncQnaFields);
+syncQnaFields();
+
+
+document.querySelector("#info-next").addEventListener("click", () => {
+  if (validateTitle()) showStep(2);
+});
+document.querySelector("#option-prev").addEventListener("click", () => showStep(1));
+document.querySelector("#option-next").addEventListener("click", () => {
+  updateSummary();
+  showStep(3);
+});
+document.querySelector("#edit-info").addEventListener("click", () => showStep(1));
+document.querySelector("#edit-options").addEventListener("click", () => showStep(2));
+
+function setSubmitState(loading, message) {
+  form.setAttribute("aria-busy", String(loading));
+  saveButton.disabled = loading;
+  saveButton.textContent = loading ? "저장하는 중…" : "계획 저장하기 →";
+  submitStatus.textContent = message;
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+async function persistPlan(plan) {
+  await wait(600);
+
+  if (forceSaveFailure) {
+    throw new Error("수업용 저장 실패");
+  }
+
+  plans.unshift(plan);
+  if (!savePlans()) {
+    plans.shift();
+    throw new Error("브라우저 저장 실패");
+  }
+}
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  if (currentStep === 1) {
+    document.querySelector("#info-next").click();
+    return;
+  }
+
+  if (currentStep !== 3) return;
+
+  if (!validateTitle()) {
+    showStep(1);
+    window.requestAnimationFrame(() => {
+      form.querySelector('[aria-invalid="true"]')?.focus();
+    });
+    return;
+  }
+
+  const data = new FormData(form);
+  const plan = {
+    id: typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`,
+    title: String(data.get("title") || "").trim(),
+    nickname: String(data.get("nickname") || "").trim(),
+    duration: String(data.get("duration") || "5"),
+    qna: data.get("qna") === "included",
+    qnaCount: String(data.get("qna-count") || "2"),
+    cancelled: false,
+    createdAt: new Date().toISOString()
+  };
+
+  setSubmitState(true, "훈련 계획을 저장하고 있습니다.");
+
+  try {
+    await persistPlan(plan);
+    renderPlans();
+    archiveStatus.textContent = `‘${plan.title}’ 계획을 저장했습니다.`;
+    document.querySelector("#complete-message").textContent =
+      `‘${plan.title}’ 계획을 내 계획에서 다시 열어볼 수 있습니다.`;
+    setSubmitState(false, "훈련 계획을 저장했습니다.");
+    showStep(4);
+  } catch {
+    setSubmitState(
+      false,
+      "저장하지 못했습니다. 입력한 내용은 그대로 두었습니다. 다시 시도해 주세요."
+    );
+  }
+});
+
+  const plan = {
+    id: typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    ...getFormValues(),
+    cancelled: false,
+    createdAt: new Date().toISOString()
+  };
+  plans.unshift(plan);
+  const persisted = savePlans();
+  renderPlans();
+  archiveStatus.textContent = persisted
+    ? `‘${plan.title}’ 계획을 저장했습니다. 아래 목록에서 다시 열 수 있습니다.`
+    : "계획을 현재 화면에 저장했습니다. 브라우저 저장 공간을 사용할 수 없어 새로고침하면 사라질 수 있습니다.";
+  document.querySelector("#complete-message").textContent = `‘${plan.title}’ 계획을 내 계획에서 다시 열어볼 수 있습니다.`;
+  showStep(4);
+
+document.querySelector("#restart-button").addEventListener("click", () => {
+  form.reset();
+  syncQnaFields();
+
+  nicknameCount.textContent = "0 / 10자";
+  titleCount.textContent = "0 / 60자";
+  titleHelp.textContent = "발표를 구분할 수 있도록 2자 이상 입력해 주세요.";
+  titleError.textContent = "";
+
+  titleInput.removeAttribute("aria-invalid");
+  titleField.classList.remove("is-valid", "has-error");
+  setSubmitState(false, "");
+
+  showStep(1);
+  titleInput.focus();
+});
+
+function createText(tag, className, content) {
+  const element = document.createElement(tag);
+  element.className = className;
+  element.textContent = content;
+  return element;
+}
+
+function renderPlans() {
+  planList.replaceChildren();
+  emptyState.hidden = plans.length !== 0;
+  planList.hidden = plans.length === 0;
+  const activeCount = plans.filter((plan) => !plan.cancelled).length;
+  planCount.textContent = String(activeCount);
+  planCount.setAttribute("aria-label", `진행 중인 계획 ${activeCount}개`);
+
+  plans.forEach((plan) => {
+    const card = document.createElement("li");
+    card.className = `plan-card${plan.cancelled ? " is-cancelled" : ""}`;
+    const top = document.createElement("div");
+    top.className = "plan-card-top";
+    top.append(createText("span", "plan-state", plan.cancelled ? "취소됨" : "저장됨"));
+    const date = new Date(plan.createdAt);
+    if (!Number.isNaN(date.getTime())) {
+      top.append(createText("time", "plan-date", new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric" }).format(date)));
+    }
+    card.append(top);
+    card.append(createText("h3", "plan-title", plan.title));
+    card.append(createText("p", "plan-meta", `${plan.duration}분 연습 · ${qnaText(plan)}`));
+    const actions = document.createElement("div");
+    actions.className = "plan-actions";
+    const openButton = createText("button", "button button-secondary", "내용 보기");
+    openButton.type = "button";
+    openButton.dataset.action = "open";
+    openButton.dataset.id = plan.id;
+    const toggleButton = createText("button", "button button-text", plan.cancelled ? "취소 되돌리기" : "계획 취소하기");
+    toggleButton.type = "button";
+    toggleButton.dataset.action = "toggle";
+    toggleButton.dataset.id = plan.id;
+    actions.append(openButton, toggleButton);
+    card.append(actions);
+    planList.append(card);
+  });
+}
+
+planList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+  const plan = plans.find((item) => item.id === button.dataset.id);
+  if (!plan) return;
+
+  if (button.dataset.action === "open") {
+    document.querySelector("#dialog-title").textContent = plan.title;
+    document.querySelector("#dialog-status").textContent = plan.cancelled ? "취소된 계획입니다." : "저장된 계획입니다.";
+    document.querySelector("#dialog-nickname").textContent = plan.nickname || "입력 안 함";
+    document.querySelector("#dialog-duration").textContent = `${plan.duration}분`;
+    document.querySelector("#dialog-qna").textContent = qnaText(plan);
+    planDialog.showModal();
+    return;
+  }
+
+  const wasCancelled = plan.cancelled;
+  plan.cancelled = !wasCancelled;
+  const persisted = savePlans();
+  renderPlans();
+  archiveStatus.textContent = persisted
+    ? `‘${plan.title}’ 계획을 ${wasCancelled ? "다시 사용할 수 있습니다" : "취소했습니다"}.`
+    : "상태를 현재 화면에서 바꿨지만, 브라우저 저장 공간을 사용할 수 없어 새로고침하면 사라질 수 있습니다.";
+  const nextButton = [...planList.querySelectorAll('button[data-action="toggle"]')].find((item) => item.dataset.id === plan.id);
+  nextButton?.focus();
+});
+
+document.querySelector("#dialog-close").addEventListener("click", () => planDialog.close());
+document.querySelector("#dialog-done").addEventListener("click", () => planDialog.close());
+
+const themeButton = document.querySelector("#theme-button");
+themeButton.addEventListener("click", () => {
+  const dark = document.body.classList.toggle("dark");
+  themeButton.textContent = dark ? "라이트 모드" : "다크 모드";
+  themeButton.setAttribute("aria-pressed", String(dark));
+});
+
+renderPlans();
