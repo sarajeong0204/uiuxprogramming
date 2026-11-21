@@ -47,7 +47,15 @@ p { color: var(--muted); }
 .site-header { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
 .header-inner { min-height: 78px; display: flex; align-items: center; gap: 36px; }
 .brand { display: inline-flex; align-items: center; flex: none; text-decoration: none; }
-.brand img { display: block; width: 124px; height: auto; }
+.site-header .brand img {
+  width: 30px;
+  height: auto;
+}
+
+.site-footer .brand img {
+  width: 20px;
+  height: auto;
+}
 .main-nav {
   margin-left: auto;
 }
